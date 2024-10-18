@@ -1,5 +1,5 @@
 # koicmdlist
---- &aKCL コマンドヘルプ(OP) ---
+--- KCL コマンドヘルプ(OP) ---
  - /kcl help - このヘルプ表示
  - /kcl reload - コンフィグを再読み込み
  - /whitekick - ホワリス未登録のユーザーを蹴りホワリスを有効化します。
