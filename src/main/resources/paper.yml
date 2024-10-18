@@ -1,0 +1,22 @@
+name: koicmdlist
+version: '1.0-SNAPSHOT'
+main: koirdsuzu.koicmdlist.Koicmdlist
+api-version: '1.20'
+authors: [ koirdsuzu ]
+commands:
+  kcl:
+    description: Koicmdlist plugin commands
+    usage: /kcl [help|reload]
+    permission: koicmdlist.admin
+    permission-message: You do not have permission to use this command.
+    aliases: [koicmdlist] # ここでkclコマンドのエイリアスとしてkoicmdlistを設定
+  fly:
+    description: Toggle fly mode or control fly for the server
+    usage: /flyで飛行を有効、または無効に出来ます。
+    permission: koicmdlist.fly.use
+    permission-message: You do not have permission to use this command.
+  whitekick:
+    description: Toggle fly mode or control fly for the server
+    usage: /whitekickでホワリス未登録ユーザーを蹴りホワリスを有効化します。
+    permission: koicmdlist.whitekick
+    permission-message: You do not have permission to use this command.
