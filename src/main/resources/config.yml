@@ -1,0 +1,49 @@
+# Koicmdlistの設定
+# trueの場合、プレイヤーは飛行の権限なしでも飛ぶことができます
+ignore-fly-permission: false
+
+# メッセージの前に表示するプレフィックス
+prefix: "&7[&aKCL&7]&r "
+
+# メッセージ設定
+message:
+  server:
+    start: "&eプラグインが正常に有効化されました。"
+    stop: "&aプラグインが正常に無効化されました。"
+  fly:
+    no-permission: "&c権限がありません。"
+    disabled: "&cサーバー全体で飛行が無効化されています。"
+    enabled: "&a飛行が有効化されました。"
+    already-disabled: "&c飛行が無効化されました。"
+    command-usage: "&cコマンドの使い方が間違っています。使い方: /fly [on|off]"
+    user-command-usage: '&cコマンドの使い方が間違っています。使い方: /fly user <mcid> <on|off>'
+    server-enabled: "&aサーバー全体の飛行が有効化されました。"
+    server-disabled: "&cサーバー全体の飛行が無効化されました。"
+    no-player: '&c指定されたプレイヤーが見つかりません。'
+    user-fly-enabled-admin: '&a<MCID> の飛行状態を有効に設定しました。'
+    user-fly-disabled-admin: '&c<MCID> の飛行状態を無効に設定しました。'
+    user-fly-enabled-player: '&aあなたの飛行状態が有効に設定されました。'
+    user-fly-disabled-player: '&cあなたの飛行状態が無効に設定されました。'
+
+  kcl:
+    help:
+      user: "&7--- &aKCL コマンドヘルプ &7---
+      \n&7 - &a/kcl help&7 - &aこのヘルプ表示
+      \n&7 - &a/fly&7 - &a飛行モードの変更"
+      admin: "&7--- &aKCL コマンドヘルプ(OP) &7---
+      \n&7 - &a/kcl help&7 - &aこのヘルプ表示
+      \n&7 - &a/kcl reload&7 - &aコンフィグを再読み込み
+      \n&7 - &a/whitekick&7 - &aホワリス未登録のユーザーを蹴りホワリスを有効化します。
+      \n&7 - &a/fly&7 - &a飛行モードの変更
+      \n&7 - &a/fly <on|off>&7 - &aサーバー全体での飛行設定の変更
+      \n&7 - &a/fly user <mcid> <on|off>&7 - &aユーザーの飛行設定の変更"
+    reload-success: "&aコンフィグがリロードされました。"
+    no-permission: "&c権限がありません。"
+    command-usage: "&cコマンドの使い方が間違っています。使い方: /kcl [help|reload]"
+
+  general:
+    player-only: "&cこのコマンドはプレイヤーのみが使用できます。"
+
+  whitekick:
+    kick-message: "&cホワイトリストに登録されていないため、キックされました。"
+    enabled: "&a未登録のユーザーをキックし、ホワイトリストが有効化されました。"
