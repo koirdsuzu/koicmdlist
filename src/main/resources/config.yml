@@ -1,5 +1,9 @@
 # Koicmdlistの設定
-# trueの場合、プレイヤーは飛行の権限なしでも飛ぶことができます
+#{player} - プレイヤーを代入します。
+#{players} - プレイヤーの一覧を代入します。
+#{uuid} - UUIDを代入します
+
+# trueの場合、プレイヤーは権限なしでもコマンドを使用することができます
 ignore-fly-permission: false
 
 # メッセージの前に表示するプレフィックス
@@ -20,23 +24,36 @@ message:
     server-enabled: "&aサーバー全体の飛行が有効化されました。"
     server-disabled: "&cサーバー全体の飛行が無効化されました。"
     no-player: '&c指定されたプレイヤーが見つかりません。'
-    user-fly-enabled-admin: '&a<MCID> の飛行状態を有効に設定しました。'
-    user-fly-disabled-admin: '&c<MCID> の飛行状態を無効に設定しました。'
+    user-fly-enabled-admin: '&a{player} の飛行状態を有効に設定しました。'
+    user-fly-disabled-admin: '&c{player} の飛行状態を無効に設定しました。'
     user-fly-enabled-player: '&aあなたの飛行状態が有効に設定されました。'
     user-fly-disabled-player: '&cあなたの飛行状態が無効に設定されました。'
+    player-flying: "&a{player} は現在飛行状態です。"
+    player-not-flying: "&c{player} は現在飛行していません。"
+    flying-players-list: "&a飛行状態のプレイヤー: {players}"
+    no-flying-players: "&a現在、飛行状態のプレイヤーはいません。"
+
+  uuid:
+    no-permission: "&c権限がありません。"
+    specify-player: "&cプレイヤーまたはエンティティを指定してください。"
+    valid-player: "&aプレイヤー {player} のUUID: {uuid}"
+    valid-entity: "&aエンティティのUUID: {uuid}"
+    no-valid-found: "&c有効なプレイヤーまたはエンティティが見つかりません。"
 
   kcl:
     help:
       user: "&7--- &aKCL コマンドヘルプ &7---
-      \n&7 - &a/kcl help&7 - &aこのヘルプ表示
-      \n&7 - &a/fly&7 - &a飛行モードの変更"
+      \n&7 - &a/kcl help&7 - &aこのヘルプ表示します。
+      \n&7 - &a/fly&7 - &a飛行モードを変更します。"
       admin: "&7--- &aKCL コマンドヘルプ(OP) &7---
-      \n&7 - &a/kcl help&7 - &aこのヘルプ表示
-      \n&7 - &a/kcl reload&7 - &aコンフィグを再読み込み
+      \n&7 - &a/kcl help&7 - &aこのヘルプ表示します。
+      \n&7 - &a/kcl reload&7 - &aコンフィグを再読み込みします。
       \n&7 - &a/whitekick&7 - &aホワリス未登録のユーザーを蹴りホワリスを有効化します。
-      \n&7 - &a/fly&7 - &a飛行モードの変更
-      \n&7 - &a/fly <on|off>&7 - &aサーバー全体での飛行設定の変更
-      \n&7 - &a/fly user <mcid> <on|off>&7 - &aユーザーの飛行設定の変更"
+      \n&7 - &a/fly&7 - &a飛行モードを変更します。
+      \n&7 - &a/fly <on|off>&7 - &aサーバー全体での飛行設定の変更します。
+      \n&7 - &a/fly user <mcid> <on|off>&7 - &aユーザーの飛行設定の変更します。
+      \n&7 - &a/fly get <mcid|list>&7 - &a飛行モードかを確認します。
+      \n&7 - &a/uuid <entity>&7 - &a指定したエンティティUUIDを取得します。"
     reload-success: "&aコンフィグがリロードされました。"
     no-permission: "&c権限がありません。"
     command-usage: "&cコマンドの使い方が間違っています。使い方: /kcl [help|reload]"
