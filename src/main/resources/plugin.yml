@@ -1,0 +1,78 @@
+name: koicmdlist
+version: '1.0-SNAPSHOT'
+main: koirdsuzu.koicmdlist.Koicmdlist
+api-version: '1.20'
+authors: [ koirdsuzu ]
+commands:
+  kcl:
+    description: "KCLのヘルプや設定を管理する"
+    usage: /kcl [help|reload]
+    permission: koicmdlist.admin
+    permission-message: You do not have permission to use this command.
+    aliases: [koicmdlist]
+
+  fly:
+    description: "飛行状態を切り替える"
+    usage: /flyで飛行を有効、または無効に出来ます。
+    permission: koicmdlist.fly.admin
+    permission-message: You do not have permission to use this command.
+
+  uuid:
+    description: "UUIDを取得"
+    usage: /uuidでUUIDを取得
+    permission: koicmdlist.uuid.admin
+    permission-message: You do not have permission to use this command.
+
+  whitekick:
+    description: "ホワイトリストに登録されていないプレイヤーをキックする"
+    usage: /whitekickでホワリス未登録ユーザーを蹴りホワリスを有効化します。
+    permission: koicmdlist.whitekick
+    permission-message: You do not have permission to use this command.
+
+permissions:
+  koicmdlist.*:
+    description: koicmdlist All Permissions
+    default: op
+    children:
+      koicmdlist.admin: true
+      koicmdlist.fly.admin: true
+      koicmdlist.uuid.admin: true
+      koicmdlist.whitekick: true
+
+  koicmdlist.admin:
+    description: "基本の全権限"
+    default: op
+    children:
+      koicmdlist.use: true
+      koicmdlist.fly: true
+      koicmdlist.fly.use: true
+      koicmdlist.fly.admin: true
+      koicmdlist.whitekick: true
+      koicmdlist.uuid: true
+      koicmdlist.uuid.use: true
+      koicmdlist.uuid.admin: true
+
+  koicmdlist.fly.admin:
+    description: "Fly Admin Command"
+    default: op
+    children:
+      koicmdlist.fly.use: true
+
+  koicmdlist.fly.use:
+    description: "Fly Use Command"
+    default: op
+
+  koicmdlist.uuid.admin:
+    description: "UUID Admin Command"
+    default: op
+    children:
+      koicmdlist.uuid.use: true
+      koicmdlist.uuid.get: true
+
+  koicmdlist.uuid.use:
+    description: "UUID Use Command"
+    default: op
+
+  koicmdlist.whitekick:
+    description: "ホワイトリスト未登録者キック権限"
+    default: op
