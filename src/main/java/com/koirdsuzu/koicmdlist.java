@@ -4,10 +4,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class Koicmdlist extends JavaPlugin implements TabCompleter {
@@ -31,6 +34,11 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     private String flyUserFlyDisabledAdmin;
     private String flyUserFlyEnabledPlayer;
     private String flyUserFlyDisabledPlayer;
+    private String playerflying;
+    private String playernotflying;
+    private String flyingplayerslist;
+    private String noflyingplayers;
+
     // kclコマンド関係
     private String kclHelpUser;
     private String kclHelpAdmin;
@@ -38,11 +46,20 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     private String kclNoPermission;
     private String kclCommandUsage;
 
-    //whitekick関係
+    // whitekick関係
     private boolean whitelistEnabled = false; // ホワイトリストの有効/無効状態を保持
     private String kickMessage; // キックメッセージ
     private String whitelistEnabledMessage; // ホワイトリスト有効化メッセージ
+
+    // uuid関係
+    private String noPermissionMessage;
+    private String specifyPlayerMessage;
+    private String validPlayerMessage;
+    private String validEntityMessage;
+    private String noValidFoundMessage;
+    // 一般メッセージ関係
     private String playerOnly;
+    private String currentArg;
 
 
     @Override
@@ -58,6 +75,8 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
         getCommand("koicmdlist").setExecutor(this); // /koicmdlist コマンドでも同じ処理を実行可能に
         getCommand("whitekick").setExecutor(this); // /whitekick コマンドを追加
         getCommand("whitekick").setTabCompleter(this);// Tab保管を追加
+        getCommand("uuid").setExecutor(this); // /uuid コマンドを追加
+        getCommand("uuid").setTabCompleter(this);// Tab保管を追加
 
         // config.ymlからサーバー起動メッセージを取得
         String serverStartMessage = getConfig().getString("message.server.start", "&aプラグインが正常に有効化されました。");
@@ -92,10 +111,14 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
         flyServerDisabled = config.getString("message.fly.server-disabled", "&cサーバー全体の飛行が無効化されました。");
         flyUserCommandUsage = config.getString("message.fly.user-command-usage", "&cコマンドの使い方が間違っています。使い方: /fly user <mcid> <on|off>");
         flyUserNoPlayer = config.getString("message.fly.no-player", "&c指定されたプレイヤーが見つかりません。");
-        flyUserFlyEnabledAdmin = config.getString("message.fly.user-fly-enabled-admin", "&a<MCID> の飛行状態を有効に設定しました。");
-        flyUserFlyDisabledAdmin = config.getString("message.fly.user-fly-disabled-admin", "&c<MCID> の飛行状態を無効に設定しました。");
+        flyUserFlyEnabledAdmin = config.getString("message.fly.user-fly-enabled-admin", "&a{player} の飛行状態を有効に設定しました。");
+        flyUserFlyDisabledAdmin = config.getString("message.fly.user-fly-disabled-admin", "&c{player} の飛行状態を無効に設定しました。");
         flyUserFlyEnabledPlayer = config.getString("message.fly.user-fly-enabled-player", "&aあなたの飛行状態が有効に設定されました。");
         flyUserFlyDisabledPlayer = config.getString("message.fly.user-fly-disabled-player", "&cあなたの飛行状態が無効に設定されました。");
+        playerflying = config.getString("message.fly.player-flying", "&a{player} は現在飛行状態です。");
+        playernotflying = config.getString("message.fly.player-not-flying", "&c{player} は現在飛行していません。");
+        flyingplayerslist = config.getString("message.fly.flying-players-list", "&a飛行状態のプレイヤー: {players}");
+        noflyingplayers = config.getString("message.fly.no-flying-players", "&a現在、飛行状態のプレイヤーはいません。");
 
         // kclメッセージの読み込み
         kclHelpUser = config.getString("message.kcl.help.user", "&a--- KCL コマンドヘルプ (ユーザー) ---\n/help: ヘルプ表示\n/reload: コンフィグをリロード");
@@ -107,6 +130,13 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
         // whitekickメッセージ読み込み
         kickMessage = config.getString("message.whitekick.kick-message", "&cホワイトリストに登録されていないため、キックされました。");
         whitelistEnabledMessage = config.getString("message.whitekick.enabled", "&aホワイトリストが有効化されました。");
+
+        // uuidメッセージの読み込み
+        noPermissionMessage = config.getString("message.uuid.no-permission", "&c権限がありません。");
+        specifyPlayerMessage = config.getString("message.uuid.specify-player", "&cプレイヤーまたはエンティティを指定してください。");
+        validPlayerMessage = config.getString("message.uuid.valid-player", "&aプレイヤー {player} のUUID: {uuid}");
+        validEntityMessage = config.getString("message.uuid.valid-entity", "&aエンティティのUUID: {uuid}");
+        noValidFoundMessage = config.getString("message.uuid.no-valid-found", "&c有効なプレイヤーまたはエンティティが見つかりません。");
 
         // 一般メッセージの読み込み
         playerOnly = config.getString("message.general.player-only", "&cこのコマンドはプレイヤーのみが使用できます。");
@@ -120,6 +150,8 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
             return handleKclCommand(sender, args);
         } else if (command.getName().equalsIgnoreCase("whitekick")) {
             return handleWhiteKickCommand(sender);
+        } else if (command.getName().equalsIgnoreCase("uuid")) {
+            return handleUuidCommand(sender, args);
         }
         return false;
     }
@@ -154,7 +186,7 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
                 }
                 return true;
             } else if (args[0].equalsIgnoreCase("off")) {
-                if (sender.hasPermission("koicmdlist.fly.admin")) {
+                if (sender.hasPermission("koicmdlist.flyadmin")) {
                     disableFly();
                     Bukkit.broadcastMessage(formatMessage(flyServerDisabled));
                 } else {
@@ -175,26 +207,65 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
 
                 if (args[2].equalsIgnoreCase("on")) {
                     targetPlayer.setAllowFlight(true);
-                    sender.sendMessage(formatMessage(flyUserFlyEnabledAdmin.replace("<MCID>", targetPlayer.getName())));
+                    sender.sendMessage(formatMessage(flyUserFlyEnabledAdmin).replace("{MCID}", targetPlayer.getName()));
                     targetPlayer.sendMessage(formatMessage(flyUserFlyEnabledPlayer));
                 } else if (args[2].equalsIgnoreCase("off")) {
                     targetPlayer.setAllowFlight(false);
-                    sender.sendMessage(formatMessage(flyUserFlyDisabledAdmin.replace("<MCID>", targetPlayer.getName())));
+                    sender.sendMessage(formatMessage(flyUserFlyDisabledAdmin).replace("{MCID}", targetPlayer.getName()));
                     targetPlayer.sendMessage(formatMessage(flyUserFlyDisabledPlayer));
                 } else {
                     sender.sendMessage(formatMessage(flyUserCommandUsage));
                 }
                 return true;
+            } else if (args[0].equalsIgnoreCase("get")) {
+                return handleFlyGetCommand(sender, args);
             }
         }
         sender.sendMessage(formatMessage(flyCommandUsage));
         return true;
     }
 
+    // fly get関係
+    private boolean handleFlyGetCommand(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(formatMessage(flyCommandUsage));
+            return true;
+        }
+
+        if (args[1].equalsIgnoreCase("list")) {
+            List<String> flyingPlayers = new ArrayList<>();
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (player.getAllowFlight()) {
+                    flyingPlayers.add(player.getName());
+                }
+            }
+
+            if (flyingPlayers.isEmpty()) {
+                sender.sendMessage(formatMessage(noflyingplayers));
+            } else {
+                sender.sendMessage(formatMessage(flyingplayerslist).replace("{players}", String.join(", ", flyingPlayers)));
+            }
+            return true;
+        } else {
+            Player targetPlayer = Bukkit.getPlayer(args[1]);
+            if (targetPlayer == null) {
+                sender.sendMessage(formatMessage(flyUserNoPlayer));
+                return true;
+            }
+
+            if (targetPlayer.getAllowFlight()) {
+                sender.sendMessage(formatMessage(playerflying).replace("{player}", targetPlayer.getName()));
+            } else {
+                sender.sendMessage(formatMessage(playernotflying).replace("{player}", targetPlayer.getName()));
+            }
+            return true;
+        }
+    }
+
     // /kclコマンドの処理
     private boolean handleKclCommand(CommandSender sender, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            if (sender.hasPermission("koicmdlist.admin")) {
+                if (sender.hasPermission("koicmdlist.admin")) {
                 sender.sendMessage(formatMessage(kclHelpAdmin));
             } else {
                 sender.sendMessage(formatMessage(kclHelpUser));
@@ -267,7 +338,52 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
         }
     }
 
-    // メッセージをフォーマットして送信
+    // /uuid コマンドの処理
+
+    private boolean handleUuidCommand(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("koicmdlist.uuid.use")) {
+            sender.sendMessage(formatMessage(noPermissionMessage));
+            return true;
+        }
+
+        if (args.length == 0) {
+            sender.sendMessage(formatMessage(specifyPlayerMessage));
+            return true;
+        }
+
+        String target = args[0];
+
+        // プレイヤーを指定した場合
+        Player player = Bukkit.getPlayer(target);
+        if (player != null) {
+            String uuid = player.getUniqueId().toString();
+            sender.sendMessage(formatMessage(validPlayerMessage.replace("{player}", player.getName()).replace("{uuid}", uuid)));
+            Bukkit.getConsoleSender().sendMessage("Player " + player.getName() + "'s UUID: " + uuid);
+            return true;
+        }
+
+        // ターゲットセレクター (@p, @a, @s, @e) または @e[type=] などを指定した場合
+        try {
+            List<Entity> entities = Bukkit.selectEntities(sender, target);
+            if (!entities.isEmpty()) {
+                for (Entity entity : entities) {
+                    String uuid = entity.getUniqueId().toString();
+                    sender.sendMessage(formatMessage(validEntityMessage.replace("{uuid}", uuid)));
+                    Bukkit.getConsoleSender().sendMessage("Entity's UUID: " + uuid);
+                }
+                return true;
+            }
+        } catch (IllegalArgumentException e) {
+            sender.sendMessage(formatMessage(noValidFoundMessage));
+            return true;
+        }
+
+        sender.sendMessage(formatMessage(noValidFoundMessage));
+        return true;
+    }
+
+
+    // メッセージをフォーマットして実行
     private String formatMessage(String message) {
         return ChatColor.translateAlternateColorCodes('&', prefix + message);
     }
@@ -281,6 +397,7 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
                     completions.add("on");
                     completions.add("off");
                     completions.add("user");
+                    completions.add("get");
                 }
             } else if (args.length == 2 && args[0].equalsIgnoreCase("user")) {
                 for (Player player : Bukkit.getOnlinePlayers()) {
@@ -289,14 +406,109 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
             } else if (args.length == 3 && args[0].equalsIgnoreCase("user")) {
                 completions.add("on");
                 completions.add("off");
+            } else if (args.length == 2) {
+                if (args[0].equalsIgnoreCase("get")) {
+                    completions.add("list");  // "list" を候補に追加
+                    for (Player player : sender.getServer().getOnlinePlayers()) {
+                        completions.add(player.getName());  // オンラインプレイヤー名を候補に追加
+                    }
+                    return completions;
+                }
             }
-        } else if (command.getName().equalsIgnoreCase("kcl") || command.getName().equalsIgnoreCase("koicmdlist")) {
+    } else if (command.getName().equalsIgnoreCase("kcl") || command.getName().equalsIgnoreCase("koicmdlist")) {
             if (args.length == 1) {
                 completions.add("help");
                 if (sender.hasPermission("koicmdlist.admin")) {
                     completions.add("reload");
                 }
             }
+        } else if (command.getName().equalsIgnoreCase("uuid")) {
+            if (args.length == 0) {
+                return completions;
+            }
+
+            String currentArg = args[0];
+
+            // currentArg が null の場合の保護
+            if (currentArg == null) {
+                return completions;
+            }
+
+            // プレイヤーまたはターゲットセレクターの補完
+            if (args.length == 1) {
+
+                // ターゲットセレクターの補完
+                if (!currentArg.startsWith("@e[") && !currentArg.contains("]")) {
+                    if (currentArg.isEmpty() || "@".startsWith(currentArg)) {
+                        completions.add("@p");
+                        completions.add("@a");
+                        completions.add("@s");
+                        completions.add("@r");
+                        completions.add("@e");
+                    }
+
+                    // プレイヤー名を補完
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        if (player != null && player.getName().toLowerCase().startsWith(currentArg.toLowerCase())) {
+                            completions.add(player.getName());
+                        }
+                    }
+                }
+
+                // @e[で始まる場合はターゲットセレクターのコンポーネントを補完
+                if (currentArg.startsWith("@e[") && !currentArg.contains("]")) {
+                    String insideBrackets = currentArg.substring(3); // @e[の後ろを取得
+                    String prefix = currentArg.substring(0, currentArg.lastIndexOf("[") + 1); // "@e["の部分を保持
+
+                    // 入力された文字に応じたフィルタリング (部分一致をサポート)
+                    if (insideBrackets.toLowerCase().startsWith("t")) {
+                        completions.add(prefix + "type=");
+                    }
+                    if (insideBrackets.toLowerCase().startsWith("d")) {
+                        completions.add(prefix + "distance=");
+                    }
+                    if (insideBrackets.toLowerCase().startsWith("n")) {
+                        completions.add(prefix + "name=");
+                    }
+                    if (insideBrackets.toLowerCase().startsWith("l")) {
+                        completions.add(prefix + "limit=");
+                    }
+                    if (insideBrackets.toLowerCase().startsWith("s")) {
+                        completions.add(prefix + "sort=");
+                    }
+                    if (insideBrackets.toLowerCase().startsWith("x")) {
+                        completions.add(prefix + "x=");
+                    }
+                    if (insideBrackets.toLowerCase().startsWith("y")) {
+                        completions.add(prefix + "y=");
+                    }
+                    if (insideBrackets.toLowerCase().startsWith("z")) {
+                        completions.add(prefix + "z=");
+                    }
+
+                    // `type=` の後のエンティティリストの補完
+                    if (insideBrackets.startsWith("type=")) {
+                        String entityPart = insideBrackets.substring(5); // "type="の後ろの文字列を取得
+                        for (EntityType type : EntityType.values()) {
+                            if (type.isAlive() && type.name().toLowerCase().startsWith(entityPart.toLowerCase())) {
+                                completions.add(prefix + "type=" + type.name().toLowerCase());
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 引数がプレイヤー名またはターゲットセレクターであり、さらにスペースが続く場合は補完を停止
+            if (args.length > 1) {
+                String previousArg = args[args.length - 2];
+
+                // プレイヤー指定やセレクターが完全に閉じている場合は補完をしない
+                if (Bukkit.getPlayer(previousArg) != null || previousArg.matches("@[par]") || previousArg.matches("@e\\[.*\\]")) {
+                    return completions; // 空の補完リストを返す
+                }
+            }
+
+            return completions;
         }
         return completions;
     }
