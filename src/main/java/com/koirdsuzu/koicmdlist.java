@@ -10,10 +10,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+
 public final class Koicmdlist extends JavaPlugin implements TabCompleter {
+
+    private String version;
 
     private boolean flyEnabled = true; // サーバー全体の飛行許可状態を保持
     private boolean ignorePermission = false; // 権限を無視するかどうかを保持
@@ -60,6 +62,13 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     // 一般メッセージ関係
     private String playerOnly;
     private String currentArg;
+
+    // Configから権限無視の設定を取得
+    FileConfiguration config = getConfig();
+    boolean ignoreKclPermission = config.getBoolean("permission.kcl", false);
+    boolean ignoreFlyPermission = config.getBoolean("permission.fly", false);
+    boolean ignoreUuidPermission = config.getBoolean("permission.uuid", false);
+    boolean ignoreWhitekickPermission = config.getBoolean("permission.whitekick", false);
 
 
     @Override
@@ -162,67 +171,89 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
             sender.sendMessage(formatMessage(playerOnly));
             return true;
         }
+        if (!sender.hasPermission("koicmdlist.fly.use")) {
+            sender.sendMessage(formatMessage(flyNoPermission));
+            return true;
+        }
 
         Player player = (Player) sender;
 
-        if (args.length == 0) {
-            if (flyEnabled) {
-                if (ignorePermission || player.hasPermission("koicmdlist.fly.use")) {
-                    toggleFly(player);
+            if (args.length == 0) {
+                if (flyEnabled) {
+                    if (!ignoreFlyPermission && !sender.hasPermission("koicmdlist.fly.use")) {
+                        return true;
+                    } else {
+                        sender.sendMessage(formatMessage(flyNoPermission));
+                    }
                 } else {
-                    player.sendMessage(formatMessage(flyNoPermission));
-                }
-            } else {
-                player.sendMessage(formatMessage(flyDisabled));
-            }
-            return true;
-        } else if (args.length >= 1) {
-            if (args[0].equalsIgnoreCase("on")) {
-                if (sender.hasPermission("koicmdlist.fly.admin")) {
-                    enableFly();
-                    Bukkit.broadcastMessage(formatMessage(flyServerEnabled));
-                } else {
-                    sender.sendMessage(formatMessage(flyNoPermission));
+                    player.sendMessage(formatMessage(flyDisabled));
                 }
                 return true;
-            } else if (args[0].equalsIgnoreCase("off")) {
-                if (sender.hasPermission("koicmdlist.flyadmin")) {
-                    disableFly();
-                    Bukkit.broadcastMessage(formatMessage(flyServerDisabled));
-                } else {
-                    sender.sendMessage(formatMessage(flyNoPermission));
-                }
-                return true;
-            } else if (args[0].equalsIgnoreCase("user")) {
-                if (args.length < 3) {
-                    sender.sendMessage(formatMessage(flyUserCommandUsage));
+            } else if (args.length >= 1) {
+                if (args[0].equalsIgnoreCase("on")) {
+                    if (sender.hasPermission("koicmdlist.fly.on")) {
+                        enableFly();
+                        Bukkit.broadcastMessage(formatMessage(flyServerEnabled));
+                    } else {
+                        sender.sendMessage(formatMessage(flyNoPermission));
+                    }
                     return true;
-                }
-
-                Player targetPlayer = Bukkit.getPlayer(args[1]);
-                if (targetPlayer == null) {
-                    sender.sendMessage(formatMessage(flyUserNoPlayer));
+                } else if (args[0].equalsIgnoreCase("off")) {
+                    if (sender.hasPermission("koicmdlist.fly.off")) {
+                        disableFly();
+                        Bukkit.broadcastMessage(formatMessage(flyServerDisabled));
+                    } else {
+                        sender.sendMessage(formatMessage(flyNoPermission));
+                    }
                     return true;
-                }
+                } else if (args[0].equalsIgnoreCase("user")) {
+                    if (sender.hasPermission("koicmdlist.fly.user")) {
+                        if (args.length < 3) {
+                            sender.sendMessage(formatMessage(flyUserCommandUsage));
+                            return true;
+                        }
+                    }
 
-                if (args[2].equalsIgnoreCase("on")) {
-                    targetPlayer.setAllowFlight(true);
-                    sender.sendMessage(formatMessage(flyUserFlyEnabledAdmin).replace("{MCID}", targetPlayer.getName()));
-                    targetPlayer.sendMessage(formatMessage(flyUserFlyEnabledPlayer));
-                } else if (args[2].equalsIgnoreCase("off")) {
-                    targetPlayer.setAllowFlight(false);
-                    sender.sendMessage(formatMessage(flyUserFlyDisabledAdmin).replace("{MCID}", targetPlayer.getName()));
-                    targetPlayer.sendMessage(formatMessage(flyUserFlyDisabledPlayer));
-                } else {
-                    sender.sendMessage(formatMessage(flyUserCommandUsage));
+                    Player targetPlayer = Bukkit.getPlayer(args[1]);
+                    if (targetPlayer == null) {
+                        sender.sendMessage(formatMessage(flyUserNoPlayer));
+                        return true;
+                    }
+
+                    if (args[2].equalsIgnoreCase("on")) {
+                        if (!sender.hasPermission("koicmdlist.fly.user")) {
+                            sender.sendMessage(formatMessage(flyNoPermission));
+                            return true;
+                        }
+                        targetPlayer.setAllowFlight(true);
+                        sender.sendMessage(formatMessage(flyUserFlyEnabledAdmin).replace("{player}", targetPlayer.getName()));
+                        targetPlayer.sendMessage(formatMessage(flyUserFlyEnabledPlayer));
+                    } else if (args[2].equalsIgnoreCase("off")) {
+                        if (!sender.hasPermission("koicmdlist.fly.user")) {
+                            sender.sendMessage(formatMessage(flyNoPermission));
+                            return true;
+                        }
+                        targetPlayer.setAllowFlight(false);
+                        sender.sendMessage(formatMessage(flyUserFlyDisabledAdmin).replace("{player}", targetPlayer.getName()));
+                        targetPlayer.sendMessage(formatMessage(flyUserFlyDisabledPlayer));
+                    } else {
+                        sender.sendMessage(formatMessage(flyUserCommandUsage));
+                    }
+                    return true;
+                } else if (args[0].equalsIgnoreCase("get")) {
+                    if (sender.hasPermission("koicmdlist.fly.get")) {
+                        return handleFlyGetCommand(sender, args);
+                    }
                 }
-                return true;
-            } else if (args[0].equalsIgnoreCase("get")) {
-                return handleFlyGetCommand(sender, args);
             }
-        }
         sender.sendMessage(formatMessage(flyCommandUsage));
         return true;
+    }
+
+    private void enableFly() {
+    }
+
+    private void disableFly() {
     }
 
     // fly get関係
@@ -265,14 +296,14 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     // /kclコマンドの処理
     private boolean handleKclCommand(CommandSender sender, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-                if (sender.hasPermission("koicmdlist.admin")) {
+            if (sender.hasPermission("koicmdlist.kcl.*")) {
                 sender.sendMessage(formatMessage(kclHelpAdmin));
             } else {
-                sender.sendMessage(formatMessage(kclHelpUser));
+                    sender.sendMessage(formatMessage(kclHelpUser));
             }
             return true;
         } else if (args[0].equalsIgnoreCase("reload")) {
-            if (sender.hasPermission("koicmdlist.admin")) {
+            if (sender.hasPermission("koicmdlist.reload")) {
                 reloadConfig();
                 loadConfig();
                 sender.sendMessage(formatMessage(kclReloadSuccess));
@@ -287,7 +318,11 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
 
     // /whitekickコマンドの処理
     private boolean handleWhiteKickCommand(CommandSender sender) {
-        if (sender.hasPermission("koicmdlist.whitekick")) {
+        if (!ignoreWhitekickPermission && !sender.hasPermission("koicmdlist.whitekick")) {
+            sender.sendMessage(formatMessage(kickMessage));
+            return true;
+        }
+        if (sender.hasPermission("koicmdlist.whitekick.use")) {
             whitelistEnabled = true;
 
             // Bukkitのホワイトリスト機能を有効にする
@@ -310,7 +345,7 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     }
 
     // 飛行状態を切り替える
-    private void toggleFly(Player player) {
+    private void toggleFly(Player player, CommandSender sender) {
         if (player.getAllowFlight()) {
             player.setAllowFlight(false);
             player.sendMessage(formatMessage(flyAlreadyDisabled)); // コンソールにも出力される
@@ -321,18 +356,26 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     }
 
     // サーバー全体の飛行を有効化
-    private void enableFly() {
+    private void enableFly(CommandSender sender, String[] args) {
         flyEnabled = true;
+        if (!ignoreFlyPermission && !sender.hasPermission("koicmdlist.fly.on")) {
+        } else {
+            sender.sendMessage(formatMessage(flyNoPermission));
+        }
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.hasPermission("koicmdlist.fly.use") || ignorePermission) {
+            if (player.hasPermission("koicmdlist.fly.on") || ignorePermission) {
                 player.setAllowFlight(true);
             }
         }
     }
 
     // サーバー全体の飛行を無効化
-    private void disableFly() {
+    private void disableFly(CommandSender sender, String[] args) {
         flyEnabled = false;
+        if (!ignoreFlyPermission && !sender.hasPermission("koicmdlist.fly.off")) {
+        } else {
+            sender.sendMessage(formatMessage(flyNoPermission));
+        }
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.setAllowFlight(false);
         }
@@ -341,6 +384,10 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     // /uuid コマンドの処理
 
     private boolean handleUuidCommand(CommandSender sender, String[] args) {
+        if (!ignoreUuidPermission && !sender.hasPermission("koicmdlist.uuid")) {
+            sender.sendMessage(formatMessage(noPermissionMessage));
+            return true;
+        }
         if (!sender.hasPermission("koicmdlist.uuid.use")) {
             sender.sendMessage(formatMessage(noPermissionMessage));
             return true;
@@ -393,10 +440,16 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
         List<String> completions = new ArrayList<>();
         if (command.getName().equalsIgnoreCase("fly")) {
             if (args.length == 1) {
-                if (sender.hasPermission("koicmdlist.fly.admin")) {
+                if (sender.hasPermission("koicmdlist.fly.on")) {
                     completions.add("on");
+                }
+                if (sender.hasPermission("koicmdlist.fly.off")) {
                     completions.add("off");
+                }
+                if (sender.hasPermission("koicmdlist.fly.user")) {
                     completions.add("user");
+                }
+                if (sender.hasPermission("koicmdlist.fly.get")) {
                     completions.add("get");
                 }
             } else if (args.length == 2 && args[0].equalsIgnoreCase("user")) {
@@ -418,7 +471,7 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
     } else if (command.getName().equalsIgnoreCase("kcl") || command.getName().equalsIgnoreCase("koicmdlist")) {
             if (args.length == 1) {
                 completions.add("help");
-                if (sender.hasPermission("koicmdlist.admin")) {
+                if (sender.hasPermission("koicmdlist.kcl.reload")) {
                     completions.add("reload");
                 }
             }
