@@ -4,7 +4,12 @@
 #{uuid} - UUIDを代入します
 
 # trueの場合、プレイヤーは権限なしでもコマンドを使用することができます
-ignore-fly-permission: false
+permission: 
+  kcl: false
+  fly: false
+  uuid: false
+# 以下の項目はtrueにすることを非推奨します。
+  whitekick: false
 
 # メッセージの前に表示するプレフィックス
 prefix: "&7[&aKCL&7]&r "
