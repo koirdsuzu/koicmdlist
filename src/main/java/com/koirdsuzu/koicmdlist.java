@@ -171,24 +171,18 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
             sender.sendMessage(formatMessage(playerOnly));
             return true;
         }
-        if (!sender.hasPermission("koicmdlist.fly.use")) {
-            sender.sendMessage(formatMessage(flyNoPermission));
-            return true;
-        }
-
         Player player = (Player) sender;
-
-            if (args.length == 0) {
-                if (flyEnabled) {
-                    if (!ignoreFlyPermission && !sender.hasPermission("koicmdlist.fly.use")) {
-                        return true;
-                    } else {
-                        sender.sendMessage(formatMessage(flyNoPermission));
-                    }
+        if (args.length == 0) {
+            if (flyEnabled) {
+                if (ignorePermission || player.hasPermission("koicmdlist.fly.use")) {
+                    toggleFly(player);
                 } else {
-                    player.sendMessage(formatMessage(flyDisabled));
+                    player.sendMessage(formatMessage(flyNoPermission));
                 }
-                return true;
+            } else {
+                player.sendMessage(formatMessage(flyDisabled));
+            }
+            return true;
             } else if (args.length >= 1) {
                 if (args[0].equalsIgnoreCase("on")) {
                     if (sender.hasPermission("koicmdlist.fly.on")) {
@@ -293,59 +287,8 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
         }
     }
 
-    // /kclコマンドの処理
-    private boolean handleKclCommand(CommandSender sender, String[] args) {
-        if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            if (sender.hasPermission("koicmdlist.kcl.*")) {
-                sender.sendMessage(formatMessage(kclHelpAdmin));
-            } else {
-                    sender.sendMessage(formatMessage(kclHelpUser));
-            }
-            return true;
-        } else if (args[0].equalsIgnoreCase("reload")) {
-            if (sender.hasPermission("koicmdlist.reload")) {
-                reloadConfig();
-                loadConfig();
-                sender.sendMessage(formatMessage(kclReloadSuccess));
-            } else {
-                sender.sendMessage(formatMessage(kclNoPermission));
-            }
-            return true;
-        }
-        sender.sendMessage(formatMessage(kclCommandUsage));
-        return true;
-    }
-
-    // /whitekickコマンドの処理
-    private boolean handleWhiteKickCommand(CommandSender sender) {
-        if (!ignoreWhitekickPermission && !sender.hasPermission("koicmdlist.whitekick")) {
-            sender.sendMessage(formatMessage(kickMessage));
-            return true;
-        }
-        if (sender.hasPermission("koicmdlist.whitekick.use")) {
-            whitelistEnabled = true;
-
-            // Bukkitのホワイトリスト機能を有効にする
-            Bukkit.setWhitelist(true);
-
-            // メッセージを全員に通知
-            Bukkit.broadcastMessage(formatMessage(whitelistEnabledMessage));
-
-            // ホワイトリストに登録されていないプレイヤーをキックする
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                if (!player.isWhitelisted()) {
-                    player.kickPlayer(formatMessage(kickMessage));
-                }
-            }
-            return true;
-        } else {
-            sender.sendMessage(formatMessage(flyNoPermission));
-            return true;
-        }
-    }
-
     // 飛行状態を切り替える
-    private void toggleFly(Player player, CommandSender sender) {
+    private void toggleFly(Player player) {
         if (player.getAllowFlight()) {
             player.setAllowFlight(false);
             player.sendMessage(formatMessage(flyAlreadyDisabled)); // コンソールにも出力される
@@ -381,7 +324,58 @@ public final class Koicmdlist extends JavaPlugin implements TabCompleter {
         }
     }
 
-    // /uuid コマンドの処理
+    // kclコマンドの処理
+    private boolean handleKclCommand(CommandSender sender, String[] args) {
+        if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
+            if (sender.hasPermission("koicmdlist.kcl.*")) {
+                sender.sendMessage(formatMessage(kclHelpAdmin));
+            } else {
+                sender.sendMessage(formatMessage(kclHelpUser));
+            }
+            return true;
+        } else if (args[0].equalsIgnoreCase("reload")) {
+            if (sender.hasPermission("koicmdlist.reload")) {
+                reloadConfig();
+                loadConfig();
+                sender.sendMessage(formatMessage(kclReloadSuccess));
+            } else {
+                sender.sendMessage(formatMessage(kclNoPermission));
+            }
+            return true;
+        }
+        sender.sendMessage(formatMessage(kclCommandUsage));
+        return true;
+    }
+
+    // whitekickコマンドの処理
+    private boolean handleWhiteKickCommand(CommandSender sender) {
+        if (!ignoreWhitekickPermission && !sender.hasPermission("koicmdlist.whitekick")) {
+            sender.sendMessage(formatMessage(kickMessage));
+            return true;
+        }
+        if (sender.hasPermission("koicmdlist.whitekick.use")) {
+            whitelistEnabled = true;
+
+            // Bukkitのホワイトリスト機能を有効にする
+            Bukkit.setWhitelist(true);
+
+            // メッセージを全員に通知
+            Bukkit.broadcastMessage(formatMessage(whitelistEnabledMessage));
+
+            // ホワイトリストに登録されていないプレイヤーをキックする
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!player.isWhitelisted()) {
+                    player.kickPlayer(formatMessage(kickMessage));
+                }
+            }
+            return true;
+        } else {
+            sender.sendMessage(formatMessage(flyNoPermission));
+            return true;
+        }
+    }
+
+    // uuid コマンドの処理
 
     private boolean handleUuidCommand(CommandSender sender, String[] args) {
         if (!ignoreUuidPermission && !sender.hasPermission("koicmdlist.uuid")) {
